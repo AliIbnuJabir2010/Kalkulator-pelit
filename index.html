@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Kalkulator Ali</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #eef0f3;
+        --panel: #fff;
+        --ink: #0f172a;
+        --muted: #64748b;
+        --line: #e2e8f0;
+        --key: #f1f5f9;
+        --key-hi: #e4e9f0;
+        --fn: #334155;
+        --op: #0f172a;
+        --op-hi: #1e293b;
+        --op-ink: #fff;
+        --acc: #2f5bff;
+        --acc-hi: #2349e0;
+        --ok-bg: #dcfce7;
+        --ok: #0f7a4d;
+        box-sizing: border-box;
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #090d13;
+          --panel: #121923;
+          --ink: #f1f5f9;
+          --muted: #8b98ab;
+          --line: #222c3a;
+          --key: #1a2331;
+          --key-hi: #243044;
+          --fn: #cbd5e1;
+          --op: #e2e8f0;
+          --op-hi: #fff;
+          --op-ink: #0f172a;
+          --acc: #4f6dff;
+          --acc-hi: #6580ff;
+          --ok-bg: rgba(16, 185, 129, 0.16);
+          --ok: #34d399;
+        }
+      }
+      :root[data-theme="dark"] {
+        --bg: #090d13;
+        --panel: #121923;
+        --ink: #f1f5f9;
+        --muted: #8b98ab;
+        --line: #222c3a;
+        --key: #1a2331;
+        --key-hi: #243044;
+        --fn: #cbd5e1;
+        --op: #e2e8f0;
+        --op-hi: #fff;
+        --op-ink: #0f172a;
+        --acc: #4f6dff;
+        --acc-hi: #6580ff;
+        --ok-bg: rgba(16, 185, 129, 0.16);
+        --ok: #34d399;
+      }
+      html {
+        height: 100%;
+        scroll-padding-top: env(safe-area-inset-top, 0px);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100%;
+        display: grid;
+        place-items: center;
+        padding: 16px;
+        background: var(--bg);
+        color: var(--ink);
+        font-family:
+          "Inter",
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+        font-variant-numeric: tabular-nums;
+      }
+      .calc {
+        width: min(340px, 100%);
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        padding: 16px;
+        box-shadow:
+          0 1px 2px rgba(15, 23, 42, 0.06),
+          0 24px 48px -24px rgba(15, 23, 42, 0.25);
+      }
+      .screen {
+        padding: 20px 12px 16px;
+        text-align: right;
+        min-height: 116px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        gap: 6px;
+      }
+      .hist {
+        color: var(--muted);
+        font-size: 14px;
+        min-height: 20px;
+      }
+      .out {
+        font-size: 52px;
+        font-weight: 500;
+        letter-spacing: -0.02em;
+        line-height: 1.05;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .out.lk {
+        color: var(--muted);
+      }
+      .tag {
+        align-self: flex-start;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 999px;
+        color: var(--ok);
+        background: var(--ok-bg);
+      }
+      .tag.off {
+        color: var(--muted);
+        background: var(--key);
+      }
+      .keys {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+      }
+      button {
+        font: inherit;
+        font-size: 20px;
+        font-weight: 500;
+        border: 0;
+        border-radius: 14px;
+        height: 58px;
+        color: var(--ink);
+        background: var(--key);
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          transform 0.08s;
+      }
+      button:hover {
+        background: var(--key-hi);
+      }
+      button:active {
+        transform: scale(0.97);
+      }
+      button:focus-visible {
+        outline: 2px solid var(--acc);
+        outline-offset: 2px;
+      }
+      .fn {
+        color: var(--fn);
+      }
+      .op {
+        background: var(--op);
+        color: var(--op-ink);
+      }
+      .op:hover {
+        background: var(--op-hi);
+      }
+      .eq {
+        background: var(--acc);
+        color: #fff;
+      }
+      .eq:hover {
+        background: var(--acc-hi);
+      }
+      .wide {
+        grid-column: span 2;
+      }
+      .veil {
+        position: fixed;
+        inset: 0;
+        display: none;
+        place-items: center;
+        padding: 20px;
+        background: rgba(15, 23, 42, 0.45);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        z-index: 20;
+      }
+      .veil.show {
+        display: grid;
+      }
+      .sheet {
+        width: min(380px, 100%);
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: 0 24px 64px -16px rgba(15, 23, 42, 0.4);
+        animation: in 0.22s ease-out;
+      }
+      .pill {
+        display: inline-block;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 999px;
+        color: var(--acc);
+        background: rgba(79, 109, 255, 0.12);
+        margin-bottom: 12px;
+      }
+      .sheet h2 {
+        margin: 0 0 6px;
+        font-size: 20px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      .sum {
+        margin: 0 0 18px;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      .plan {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 14px 16px;
+        margin-bottom: 16px;
+      }
+      .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        padding-bottom: 12px;
+        margin-bottom: 12px;
+        border-bottom: 1px solid var(--line);
+        font-size: 14px;
+      }
+      .row strong {
+        font-size: 18px;
+        font-weight: 600;
+      }
+      .row small {
+        color: var(--muted);
+        font-weight: 400;
+        font-size: 13px;
+      }
+      .plan ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 8px;
+        font-size: 14px;
+      }
+      .plan li::before {
+        content: "✓";
+        color: var(--acc);
+        font-weight: 700;
+        margin-right: 10px;
+      }
+      .prog {
+        display: none;
+        height: 4px;
+        border-radius: 4px;
+        background: var(--key);
+        overflow: hidden;
+        margin-bottom: 14px;
+      }
+      .s1 .prog {
+        display: block;
+      }
+      .prog i {
+        display: block;
+        height: 100%;
+        width: 0;
+        background: var(--acc);
+        animation: fill 2.9s linear forwards;
+      }
+      .note {
+        margin: 0 0 16px;
+        color: var(--muted);
+        font-size: 13px;
+        min-height: 18px;
+      }
+      .sheet button {
+        width: 100%;
+        height: 48px;
+        font-size: 15px;
+        font-weight: 600;
+        border-radius: 12px;
+        background: var(--acc);
+        color: #fff;
+      }
+      .sheet button:hover {
+        background: var(--acc-hi);
+      }
+      .sheet button:disabled {
+        opacity: 0.6;
+        cursor: wait;
+      }
+      @keyframes in {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+      }
+      @keyframes fill {
+        to {
+          width: 100%;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .sheet {
+          animation: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="calc" aria-label="Kalkulator">
+      <div class="screen">
+        <span class="tag" id="tag" hidden></span>
+        <div class="hist" id="hist"></div>
+        <div class="out" id="out">0</div>
+      </div>
+      <div class="keys" id="keys">
+        <button class="fn" data-a="clear">AC</button>
+        <button class="fn" data-a="neg">±</button>
+        <button class="fn" data-a="pct">%</button>
+        <button class="op" data-o="÷">÷</button>
+        <button data-d="7">7</button><button data-d="8">8</button
+        ><button data-d="9">9</button>
+        <button class="op" data-o="×">×</button>
+        <button data-d="4">4</button><button data-d="5">5</button
+        ><button data-d="6">6</button>
+        <button class="op" data-o="−">−</button>
+        <button data-d="1">1</button><button data-d="2">2</button
+        ><button data-d="3">3</button>
+        <button class="op" data-o="+">+</button>
+        <button class="wide" data-d="0">0</button>
+        <button data-a="dot">,</button>
+        <button class="eq" data-a="eq">=</button>
+      </div>
+    </main>
+
+    <div
+      class="veil"
+      id="veil"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="pt"
+    >
+      <div class="sheet s0" id="pop">
+        <span class="pill">Premium</span>
+        <h2 id="pt"></h2>
+        <p class="sum" id="psum"></p>
+        <div class="plan">
+          <div class="row">
+            <span>Premium 1 detik</span
+            ><strong>Rp 49.000 <small>/detik</small></strong>
+          </div>
+          <ul>
+            <li>Hitungan tanpa batas selama aktif</li>
+            <li>Riwayat hitungan</li>
+            <li>Dukungan prioritas</li>
+          </ul>
+        </div>
+        <div class="prog"><i></i></div>
+        <p class="note" id="pnote"></p>
+        <button id="pclose">Langganan sekarang</button>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        var cur = "0",
+          prev = null,
+          op = null,
+          fresh = false,
+          locked = false,
+          pending = null,
+          stage = 0,
+          ts = [],
+          until = 0,
+          pt = 0,
+          DUR = 1000;
+        var $ = function (i) {
+          return document.getElementById(i);
+        };
+        var out = $("out"),
+          hist = $("hist"),
+          veil = $("veil"),
+          pop = $("pop");
+        var fmt = function (s) {
+          if (s === "Error") return s;
+          var neg = s[0] === "-",
+            t = neg ? s.slice(1) : s,
+            p = t.split(".");
+          var i = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+          return (neg ? "-" : "") + i + (p.length > 1 ? "," + p[1] : "");
+        };
+        var clean = function (n) {
+          return String(parseFloat(n.toPrecision(12)));
+        };
+        var show = function () {
+          out.classList.toggle("lk", locked);
+          if (locked) {
+            out.textContent = "Terkunci";
+            out.style.fontSize = "32px";
+            return;
+          }
+          var t = fmt(cur),
+            l = t.length;
+          out.textContent = t;
+          out.style.fontSize = l > 13 ? "30px" : l > 9 ? "40px" : "52px";
+        };
+        var calc = function (a, b, o) {
+          a = parseFloat(a);
+          b = parseFloat(b);
+          if (o === "+") return clean(a + b);
+          if (o === "−") return clean(a - b);
+          if (o === "×") return clean(a * b);
+          if (o === "÷") return b === 0 ? "Error" : clean(a / b);
+          return String(b);
+        };
+        function digit(d) {
+          if (cur === "Error" || fresh) {
+            cur = "0";
+            fresh = false;
+          }
+          cur =
+            cur === "0"
+              ? d
+              : cur.replace(/[-.]/g, "").length >= 12
+                ? cur
+                : cur + d;
+          show();
+        }
+        function dot() {
+          if (cur === "Error" || fresh) {
+            cur = "0";
+            fresh = false;
+          }
+          if (cur.indexOf(".") < 0) cur += ".";
+          show();
+        }
+        function operator(o) {
+          if (cur === "Error") return;
+          if (prev !== null && op && !fresh && Date.now() > until) {
+            equals();
+            return;
+          }
+          if (prev !== null && op && !fresh) {
+            cur = calc(prev, cur, op);
+          }
+          prev = cur;
+          op = o;
+          fresh = true;
+          hist.textContent = fmt(prev) + " " + o;
+          show();
+        }
+        function equals() {
+          if (prev === null || !op || cur === "Error") return;
+          var a = prev,
+            b = cur,
+            o = op,
+            r = calc(a, b, o);
+          hist.textContent = fmt(a) + " " + o + " " + fmt(b) + " =";
+          prev = null;
+          op = null;
+          fresh = true;
+          if (r !== "Error" && Date.now() > until) {
+            cur = "0";
+            locked = true;
+            show();
+            popup(a, b, r, o);
+            return;
+          }
+          cur = r;
+          show();
+        }
+        function clear() {
+          cur = "0";
+          prev = null;
+          op = null;
+          fresh = false;
+          hist.textContent = "";
+          show();
+        }
+        function neg() {
+          if (cur !== "0" && cur !== "Error") {
+            cur = cur[0] === "-" ? cur.slice(1) : "-" + cur;
+            show();
+          }
+        }
+        function pct() {
+          if (cur !== "Error") {
+            cur = clean(parseFloat(cur) / 100);
+            show();
+          }
+        }
+        function back() {
+          if (fresh || cur === "Error") return;
+          cur =
+            cur.length > 1 && !(cur.length === 2 && cur[0] === "-")
+              ? cur.slice(0, -1)
+              : "0";
+          show();
+        }
+
+        function setStage(n, t, s, note, btn) {
+          stage = n;
+          pop.className = "sheet s" + n;
+          $("pt").textContent = t;
+          $("psum").textContent = s;
+          $("pnote").textContent = note;
+          var b = $("pclose");
+          b.textContent = btn;
+          b.disabled = n === 1;
+        }
+        function popup(a, b, r, o) {
+          pending = r;
+          setStage(
+            0,
+            "Buka hasil dengan Premium",
+            "Hasil hitungan adalah fitur Premium.",
+            "Batal kapan saja.",
+            "Langganan sekarang",
+          );
+          veil.classList.add("show");
+          $("pclose").focus();
+        }
+        function pay() {
+          setStage(
+            1,
+            "Memproses pembayaran",
+            "Mohon tunggu, jangan tutup halaman ini.",
+            "Menghubungi bank…",
+            "Memproses…",
+          );
+          ts = [
+            setTimeout(function () {
+              $("pnote").textContent = "Memverifikasi pembayaran…";
+            }, 1000),
+            setTimeout(function () {
+              $("pnote").textContent = "Mengaktifkan Premium…";
+            }, 2000),
+            setTimeout(reveal, 2900),
+          ];
+        }
+        // Setelah pembayaran selesai: popup menutup sendiri,
+        // hasil tampil langsung di layar kalkulator.
+        function reveal() {
+          var r = pending;
+          cur = r;
+          locked = false;
+          stage = 0;
+          veil.classList.remove("show");
+          show();
+          grant();
+          countUp(r);
+        }
+        function countUp(r) {
+          var target = parseFloat(r),
+            t0 = performance.now(),
+            dur = 800,
+            dec = (r.split(".")[1] || "").length;
+          var reduce = window.matchMedia(
+            "(prefers-reduced-motion: reduce)",
+          ).matches;
+          if (reduce) return;
+          (function step(t) {
+            var k = Math.max(0, Math.min(1, (t - t0) / dur)),
+              e = 1 - Math.pow(1 - k, 3);
+            if (cur !== r) return;
+            out.textContent = k < 1 ? fmt((target * e).toFixed(dec)) : fmt(r);
+            if (k < 1) requestAnimationFrame(step);
+          })(t0);
+        }
+        function grant() {
+          var tg = $("tag");
+          until = Date.now() + DUR;
+          clearTimeout(pt);
+          tg.hidden = false;
+          tg.className = "tag";
+          tg.textContent = "Premium aktif · cuma prank";
+          pt = setTimeout(function () {
+            tg.className = "tag off";
+            tg.textContent = "Premium berakhir";
+            pt = setTimeout(function () {
+              tg.hidden = true;
+            }, 2000);
+          }, DUR);
+        }
+        function closePop() {
+          ts.forEach(clearTimeout);
+          stage = 0;
+          locked = false;
+          veil.classList.remove("show");
+          show();
+        }
+
+        $("keys").addEventListener("click", function (e) {
+          var b = e.target.closest("button");
+          if (!b) return;
+          if (b.dataset.d !== undefined) digit(b.dataset.d);
+          else if (b.dataset.o) operator(b.dataset.o);
+          else
+            ({ clear: clear, neg: neg, pct: pct, dot: dot, eq: equals })[
+              b.dataset.a
+            ]();
+        });
+        $("pclose").addEventListener("click", function () {
+          if (stage === 0) pay();
+        });
+        veil.addEventListener("click", function (e) {
+          if (e.target === veil && stage !== 1) closePop();
+        });
+        document.addEventListener("keydown", function (e) {
+          if (veil.classList.contains("show")) {
+            if (e.key === "Escape" && stage !== 1) closePop();
+            return;
+          }
+          var k = e.key;
+          if (/^\d$/.test(k)) digit(k);
+          else if (k === "." || k === ",") dot();
+          else if (k === "+") operator("+");
+          else if (k === "-") operator("−");
+          else if (k === "*") operator("×");
+          else if (k === "/") {
+            e.preventDefault();
+            operator("÷");
+          } else if (k === "Enter" || k === "=") {
+            e.preventDefault();
+            equals();
+          } else if (k === "Backspace") back();
+          else if (k === "Escape") clear();
+        });
+        show();
+      })();
+    </script>
+  </body>
+</html>
